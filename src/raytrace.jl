@@ -1,4 +1,5 @@
 using Printf
+using ProgressMeter
 
 include("vec3.jl")
 include("ray.jl")
@@ -51,7 +52,6 @@ end
 function runSamples(
     camera::Camera,
     world::Vector{Hittable},
-    pixels::Vector{Color},
     i::Int,
     j::Int
 )::Color
@@ -74,36 +74,36 @@ function randomScene()
     groundMaterial = Lambertian(Color(0.5, 0.5, 0.5))
     push!(world, Sphere(Point3(0, -1000, 0), 1000, groundMaterial))
 
-    for a in -11:10
-        for b in -11:10
-            chooseMat = rand()
-            center = Point3(a + (0.9 * rand()), 0.2, b + (0.9 * rand()))
+    # for a in -11:10
+    #     for b in -11:10
+    #         chooseMat = rand()
+    #         center = Point3(a + (0.9 * rand()), 0.2, b + (0.9 * rand()))
 
-            if length(center .- Point3(4, 0.2, 0)) > 0.9
-                sphereMaterial = if chooseMat < 0.8
-                    # diffuse
-                    albedo = rand(Vec3) .* rand(Vec3)
-                    Lambertian(albedo)
-                elseif chooseMat < 0.95
-                    # metal
-                    albedo = rand(0.5:0.0001:1.0, Vec3)
-                    fuzz = rand(0.0:0.0001:0.5)
-                    Metal(albedo, fuzz)
-                else
-                    # glass
-                    Dialectric(1.5)
-                end
+    #         if length(center .- Point3(4, 0.2, 0)) > 0.9
+    #             sphereMaterial = if chooseMat < 0.8
+    #                 # diffuse
+    #                 albedo = rand(Vec3) .* rand(Vec3)
+    #                 Lambertian(albedo)
+    #             elseif chooseMat < 0.95
+    #                 # metal
+    #                 albedo = rand(0.5:0.0001:1.0, Vec3)
+    #                 fuzz = rand(0.0:0.0001:0.5)
+    #                 Metal(albedo, fuzz)
+    #             else
+    #                 # glass
+    #                 Dialectric(1.5)
+    #             end
 
-                push!(world, Sphere(center, 0.2, sphereMaterial))
-            end
-        end
-    end
+    #             push!(world, Sphere(center, 0.2, sphereMaterial))
+    #         end
+    #     end
+    # end
 
     material1 = Dialectric(1.5)
     push!(world, Sphere(Point3(0, 1, 0), 1.0, material1))
 
     material2 = Lambertian(Color(0.4, 0.2, 0.1))
-    push!(world, Sphere(Point3(04, 1, 0), 1.0, material2))
+    push!(world, Sphere(Point3(-4, 1, 0), 1.0, material2))
 
     material3 = Metal(Color(0.7, 0.6, 0.5), 0.0)
     push!(world, Sphere(Point3(4, 1, 0), 1.0, material3))
@@ -111,7 +111,10 @@ function randomScene()
     world
 end
 
+progress = Progress(imageWidth * imageHeight, 1)
+
 function main()
+    @printf "using %d threads\n" Threads.nthreads()
     world = randomScene()
 
     lookfrom = Point3(13, 2, 3)
@@ -121,12 +124,14 @@ function main()
     aperture = 0.1
     camera = Camera(lookfrom, lookat, vup, 20.0, aspectRatio, aperture, distToFocus);
 
-    pixels = Color[]
+    arraySize = imageWidth * imageHeight
+    pixels = Array{Color}(undef, arraySize)
     @time begin
-        for j in reverse(0:imageHeight - 1)
+        Threads.@threads for j in (0:imageHeight - 1)
             for i in (0:imageWidth - 1)
-                pixelColor = runSamples(camera, world, pixels, i, j)
-                push!(pixels, pixelColor)
+                pixelColor = runSamples(camera, world, i, j)
+                pixels[arraySize + 1 - ((j * imageWidth) + (imageWidth - i - 1) + 1)] = pixelColor
+                next!(progress)
             end
         end
     end # end timing
