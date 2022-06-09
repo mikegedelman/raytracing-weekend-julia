@@ -2,6 +2,7 @@ using Printf
 
 include("vec3.jl")
 include("ray.jl")
+include("hit.jl")
 
 const aspectRatio = 16.0 / 9.0
 const imageWidth = 256
@@ -25,6 +26,10 @@ function writeColor(file, color::Color)
 end
 
 function rayColor(ray::Ray)
+    if hitSphere(Point3(0, 0, -1), 0.5, ray)
+        return Color(1, 0, 0)
+    end
+
     unit_direction = unitVector(ray.direction)
     t = 0.5 * (unit_direction[2] + 1.0)
     ((1.0 - t) * Color(1, 1, 1)) + (t * Color(0.5, 0.7, 1.0))
