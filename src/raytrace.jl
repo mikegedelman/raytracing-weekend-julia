@@ -5,8 +5,8 @@ include("ray.jl")
 include("hit.jl")
 include("camera.jl")
 
-const aspectRatio = 16.0 / 9.0
-const imageWidth = 256
+const aspectRatio = 3.0 / 2.0
+const imageWidth = 1200
 const imageHeight = trunc(Int, imageWidth / aspectRatio)
 const samplesPerPixel = 100
 const maxDepth = 50
@@ -68,23 +68,57 @@ function runSamples(
     pixelColor
 end
 
-function main()
+function randomScene()
     world = Hittable[]
-    material_ground = Lambertian(Color(0.8, 0.8, 0.0))
-    material_center = Lambertian(Color(0.1, 0.2, 0.5))
-    material_left = Dialectric(1.5)
-    material_right = Metal(Color(0.8, 0.6, 0.2), 0.0)
 
-    push!(world, Sphere(Point3(0, -100.5, -1), 100.0, material_ground))
-    push!(world, Sphere(Point3(0, 0, -1), 0.5, material_center))
-    push!(world, Sphere(Point3(-1, 0, -1), 0.5, material_left))
-    push!(world, Sphere(Point3(1, 0, -1), 0.5, material_right))
+    groundMaterial = Lambertian(Color(0.5, 0.5, 0.5))
+    push!(world, Sphere(Point3(0, -1000, 0), 1000, groundMaterial))
 
-    lookfrom = Point3(3, 3, 2)
-    lookat = Point3(0, 0, -1)
+    for a in -11:10
+        for b in -11:10
+            chooseMat = rand()
+            center = Point3(a + (0.9 * rand()), 0.2, b + (0.9 * rand()))
+
+            if length(center .- Point3(4, 0.2, 0)) > 0.9
+                sphereMaterial = if chooseMat < 0.8
+                    # diffuse
+                    albedo = rand(Vec3) .* rand(Vec3)
+                    Lambertian(albedo)
+                elseif chooseMat < 0.95
+                    # metal
+                    albedo = rand(0.5:0.0001:1.0, Vec3)
+                    fuzz = rand(0.0:0.0001:0.5)
+                    Metal(albedo, fuzz)
+                else
+                    # glass
+                    Dialectric(1.5)
+                end
+
+                push!(world, Sphere(center, 0.2, sphereMaterial))
+            end
+        end
+    end
+
+    material1 = Dialectric(1.5)
+    push!(world, Sphere(Point3(0, 1, 0), 1.0, material1))
+
+    material2 = Lambertian(Color(0.4, 0.2, 0.1))
+    push!(world, Sphere(Point3(04, 1, 0), 1.0, material2))
+
+    material3 = Metal(Color(0.7, 0.6, 0.5), 0.0)
+    push!(world, Sphere(Point3(4, 1, 0), 1.0, material3))
+
+    world
+end
+
+function main()
+    world = randomScene()
+
+    lookfrom = Point3(13, 2, 3)
+    lookat = Point3(0, 0, 0)
     vup = Vec3(0, 1, 0)
-    distToFocus = length(lookfrom .- lookat)
-    aperture = 2.0
+    distToFocus = 10.0
+    aperture = 0.1
     camera = Camera(lookfrom, lookat, vup, 20.0, aspectRatio, aperture, distToFocus);
 
     pixels = Color[]
