@@ -1,15 +1,41 @@
 include("vec3.jl")
 
-function hitSphere(center::Point3, radius::Float64, ray::Ray)
-    oc = ray.origin - center
-    a = dot(ray.direction, ray.direction)
-    b = 2.0 * dot(oc, ray.direction)
-    c = dot(oc, oc) - radius * radius
-    discriminant = b * b - (4 * a * c)
+struct HitRecord
+    p::Point3
+    normal::Vec3
+    t::Float64
+end
+
+abstract type Hittable end
+
+struct Sphere <: Hittable
+    center::Point3
+    radius::Float64
+end
+
+function hit(sphere::Sphere, ray::Ray, tMin::Float64, tMax::Float64)
+    oc = ray.origin - sphere.center
+    a = lengthSquared(ray.direction)
+    half_b = dot(oc, ray.direction)
+    c = lengthSquared(oc) - (sphere.radius * sphere.radius)
+    discriminant = (half_b * half_b) - (a * c)
 
     if discriminant < 0
-        -1.0
-    else
-        (-b - sqrt(discriminant)) / (2.0 * a)
+        return Nothing
     end
+
+    sqrtd = sqrt(discriminant)
+    root = (-half_b - sqrtd) / a
+    if root < tMin || tMax < root
+        root = (-half_b + sqrd) / a
+
+        if root < tMin || tMax < root
+            return Nothing
+        end
+    end
+
+    t = root
+    p = at(ray, root)
+    normal = (p - sphere.center) / sphere.radius
+    Some(HitRecord(p, normal, t))
 end

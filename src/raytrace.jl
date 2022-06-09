@@ -26,10 +26,13 @@ function writeColor(file, color::Color)
 end
 
 function rayColor(ray::Ray)
-    t = hitSphere(Point3(0, 0, -1), 0.5, ray)
-    if t > 0.0
-        normal = unitVector(at(ray, t) - Vec3(0, 0, -1))
-        return 0.5 * Color(normal[1] + 1, normal[2] + 1, normal[3] + 1)
+    sphere = Sphere(Point3(0, 0, -1), 0.5)
+
+    # I highly doubt this is how to properly handle Some/None
+    # TODO: fixme
+    rec = something(hit(sphere, ray, 0.0, Inf))
+    if rec != Nothing
+        return 0.5 * (rec.normal + Color(1, 1, 1))
     end
 
     unit_direction = unitVector(ray.direction)
