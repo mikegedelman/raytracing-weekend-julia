@@ -18,7 +18,7 @@ function Camera()
     origin = Point3(0, 0, 0)
     horizontal = Vec3(viewportWidth, 0, 0)
     vertical = Vec3(0, viewportHeight, 0)
-    lowerLeftCorner = origin - (horizontal / 2) - (vertical / 2) - Vec3(0, 0, focalLength)
+    lowerLeftCorner = origin - (horizontal ./ 2) - (vertical ./ 2) - Vec3(0, 0, focalLength)
     Camera(origin, horizontal, vertical, lowerLeftCorner)
 end
 

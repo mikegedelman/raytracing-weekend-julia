@@ -5,5 +5,5 @@ struct Ray
 end
 
 function at(ray::Ray, t::Float64)
-    ray.origin + (t * ray.direction)
+    ray.origin .+ (t .* ray.direction)
 end

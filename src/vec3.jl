@@ -14,5 +14,18 @@ function length(vec::Vec3)
 end
 
 function unitVector(vec::Vec3)
-    vec / length(vec)
+    vec ./ length(vec)
+end
+
+function randomInUnitSphere()
+    while true
+        p = rand(-1.0:0.00000001:1.0, Vec3)
+        if lengthSquared(p) < 1
+            return p
+        end
+    end
+end
+
+function randomUnitVector()
+    unitVector(randomInUnitSphere())
 end

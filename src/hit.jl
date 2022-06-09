@@ -22,7 +22,7 @@ struct Sphere <: Hittable
 end
 
 function hit(sphere::Sphere, ray::Ray, tMin::Float64, tMax::Float64)
-    oc = ray.origin - sphere.center
+    oc = ray.origin .- sphere.center
     a = lengthSquared(ray.direction)
     half_b = dot(oc, ray.direction)
     c = lengthSquared(oc) - (sphere.radius * sphere.radius)
@@ -44,7 +44,7 @@ function hit(sphere::Sphere, ray::Ray, tMin::Float64, tMax::Float64)
 
     t = root
     p = at(ray, root)
-    outwardNormal = (p - sphere.center) / sphere.radius
+    outwardNormal = (p .- sphere.center) ./ sphere.radius
     frontFace, normal = getFaceNormal(ray, outwardNormal)
     Some(HitRecord(p, normal, t, frontFace))
 end
