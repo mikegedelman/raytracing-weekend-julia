@@ -1,6 +1,9 @@
 include("vec3.jl")
 include("ray.jl")
 
+function degreesToRadians(degrees::Float64)
+    degrees * (pi / 180.0)
+end
 
 struct Camera
     origin::Point3
@@ -9,20 +12,32 @@ struct Camera
     lowerLeftCorner::Point3
 end
 
-function Camera()
-    aspectRatio = 16.0 / 9.0
-    viewportHeight = 2.0
+function Camera(
+    lookfrom::Point3,
+    lookat::Point3,
+    vup::Vec3,
+    vfov::Float64,
+    aspectRatio::Float64
+)
+    theta = degreesToRadians(vfov)
+    h = tan(theta / 2)
+    viewportHeight = 2.0 * h
     viewportWidth = aspectRatio * viewportHeight
+
+    w = unitVector(lookfrom .- lookat)
+    u = unitVector(cross(vup, w))
+    v = cross(w, u)
+
     focalLength = 1.0
 
-    origin = Point3(0, 0, 0)
-    horizontal = Vec3(viewportWidth, 0, 0)
-    vertical = Vec3(0, viewportHeight, 0)
-    lowerLeftCorner = origin - (horizontal ./ 2) - (vertical ./ 2) - Vec3(0, 0, focalLength)
+    origin = lookfrom
+    horizontal = viewportWidth .* u
+    vertical = viewportHeight .* v
+    lowerLeftCorner = origin - (horizontal ./ 2) - (vertical ./ 2) - w
     Camera(origin, horizontal, vertical, lowerLeftCorner)
 end
 
 
-function getRay(camera::Camera, u::Float64, v::Float64)
-    Ray(camera.origin, camera.lowerLeftCorner + (u * camera.horizontal) + (v * camera.vertical) - camera.origin)
+function getRay(camera::Camera, s::Float64, t::Float64)
+    Ray(camera.origin, camera.lowerLeftCorner + (s * camera.horizontal) + (t * camera.vertical) - camera.origin)
 end

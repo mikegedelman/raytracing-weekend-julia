@@ -80,8 +80,7 @@ function main()
     push!(world, Sphere(Point3(-1, 0, -1), 0.5, material_left))
     push!(world, Sphere(Point3(1, 0, -1), 0.5, material_right))
 
-
-    camera = Camera()
+    camera = Camera(Point3(-2, 2, 1), Point3(0, 0, -1), Vec3(0, 1, 0), 20.0, aspectRatio);
 
     pixels = Color[]
     @time begin
