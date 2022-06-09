@@ -31,8 +31,6 @@ function writeFile(filePath, pixels)
 end
 
 function rayColor(ray::Ray, objects::Vector{Hittable}, depth::Int)
-    sphere = Sphere(Point3(0, 0, -1), 0.5)
-
     if depth <= 0
         return Color(0, 0, 0)
     end
@@ -41,8 +39,8 @@ function rayColor(ray::Ray, objects::Vector{Hittable}, depth::Int)
     # TODO: fixme
     rec = something(hitList(objects, ray, 0.001, Inf))
     if rec != Nothing
-        target = rec.p + rec.normal + randomUnitVector()
-        return 0.5 * rayColor(Ray(rec.p, target .- rec.p), objects, depth - 1)
+        attenuation, scattered = scatter(rec.material, ray, rec)
+        return attenuation .* rayColor(scattered, objects, depth - 1)
     end
 
     unit_direction = unitVector(ray.direction)
@@ -72,8 +70,16 @@ end
 
 function main()
     world = Hittable[]
-    push!(world, Sphere(Point3(0, 0, -1), 0.5))
-    push!(world, Sphere(Point3(0, -100.5, -1), 100))
+    material_ground = Lambertian(Color(0.8, 0.8, 0.0))
+    material_center = Lambertian(Color(0.7, 0.3, 0.3))
+    material_left = Metal(Color(0.8, 0.8, 0.8))
+    material_right = Metal(Color(0.8, 0.6, 0.2))
+
+    push!(world, Sphere(Point3(0, -100.5, -1), 100.0, material_ground))
+    push!(world, Sphere(Point3(0, 0, -1), 0.5, material_center))
+    push!(world, Sphere(Point3(-1, 0, -1), 0.5, material_left))
+    push!(world, Sphere(Point3(1, 0, -1), 0.5, material_right))
+
 
     camera = Camera()
 

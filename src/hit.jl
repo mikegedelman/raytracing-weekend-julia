@@ -1,17 +1,22 @@
 include("vec3.jl")
 
+
+abstract type Material end
+
+struct Lambertian <: Material
+    albedo::Color
+end
+
+struct Metal <: Material
+    albedo::Color
+end
+
 struct HitRecord
     p::Point3
     normal::Vec3
     t::Float64
     frontFace::Bool
-end
-
-
-function getFaceNormal(ray::Ray, outwardNormal::Vec3)
-    frontFace = dot(ray.direction, outwardNormal) < 0
-    normal = if frontFace outwardNormal else -outwardNormal end
-    (frontFace, normal)
+    material::Material
 end
 
 abstract type Hittable end
@@ -19,6 +24,13 @@ abstract type Hittable end
 struct Sphere <: Hittable
     center::Point3
     radius::Float64
+    material::Material
+end
+
+function getFaceNormal(ray::Ray, outwardNormal::Vec3)
+    frontFace = dot(ray.direction, outwardNormal) < 0
+    normal = if frontFace outwardNormal else -outwardNormal end
+    (frontFace, normal)
 end
 
 function hit(sphere::Sphere, ray::Ray, tMin::Float64, tMax::Float64)
@@ -46,7 +58,7 @@ function hit(sphere::Sphere, ray::Ray, tMin::Float64, tMax::Float64)
     p = at(ray, root)
     outwardNormal = (p .- sphere.center) ./ sphere.radius
     frontFace, normal = getFaceNormal(ray, outwardNormal)
-    Some(HitRecord(p, normal, t, frontFace))
+    Some(HitRecord(p, normal, t, frontFace, sphere.material))
 end
 
 function hitList(objects::Vector{Hittable}, ray::Ray, tMin::Float64, tMax::Float64)
@@ -62,4 +74,29 @@ function hitList(objects::Vector{Hittable}, ray::Ray, tMin::Float64, tMax::Float
     end
 
     closestRec
+end
+
+
+function scatter(metal::Metal, ray::Ray, rec::HitRecord)
+    reflected = reflect(unitVector(ray.direction), rec.normal)
+    scattered = Ray(rec.p, reflected)
+
+    (metal.albedo, scattered)
+end
+
+
+function scatter(lambertian::Lambertian, ray::Ray, rec::HitRecord)
+    scatterDirection = rec.normal + randomUnitVector()
+
+    # Catch degenerate scatter direction
+    if nearZero(scatterDirection)
+        scatterDirection = rec.normal
+    end
+
+    scattered = Ray(rec.p, scatterDirection)
+    (lambertian.albedo, scattered)
+end
+
+struct Metal <: Material
+    albedo::Color
 end

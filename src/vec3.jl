@@ -29,3 +29,13 @@ end
 function randomUnitVector()
     unitVector(randomInUnitSphere())
 end
+
+const nearZeroNum = 1e-8
+
+function nearZero(vec::Vec3)
+    (abs(vec[1]) < nearZeroNum) && (abs(vec[2]) < nearZeroNum) && (abs(vec3) < nearZeroNum)
+end
+
+function reflect(v::Vec3, n::Vec3)
+    v - (2 * dot(v, n) * n)
+end
