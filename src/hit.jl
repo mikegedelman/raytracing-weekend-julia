@@ -109,6 +109,13 @@ function refract(uv::Vec3, n::Vec3,  etaiOverEtat::Float64)
     rOutPerp + rOutParallel
 end
 
+function reflectance(cosine::Float64, refIdx::Float64)
+    # Use Schlick's approximation for reflectance
+    r0 = (1 - refIdx) / (1 + refIdx)
+    r0 = r0 * r0
+    r0 + ((1 - r0) * ((1 - cosine) ^ 5))
+end
+
 function scatter(dialectric::Dialectric, ray::Ray, rec::HitRecord)
     attenuation = Color(1.0, 1.0, 1.0)
     refractionRatio = if rec.frontFace 1.0 / dialectric.ir else dialectric.ir end
@@ -119,7 +126,7 @@ function scatter(dialectric::Dialectric, ray::Ray, rec::HitRecord)
 
     cannotRefract = refractionRatio * sinTheta > 1.0
 
-    direction = if cannotRefract
+    direction = if cannotRefract || reflectance(cosTheta, refractionRatio) > rand(Float64)
         reflect(unitDirection, rec.normal)
     else
         refract(unitDirection, rec.normal, refractionRatio)
