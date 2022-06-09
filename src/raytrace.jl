@@ -80,7 +80,12 @@ function main()
     push!(world, Sphere(Point3(-1, 0, -1), 0.5, material_left))
     push!(world, Sphere(Point3(1, 0, -1), 0.5, material_right))
 
-    camera = Camera(Point3(-2, 2, 1), Point3(0, 0, -1), Vec3(0, 1, 0), 20.0, aspectRatio);
+    lookfrom = Point3(3, 3, 2)
+    lookat = Point3(0, 0, -1)
+    vup = Vec3(0, 1, 0)
+    distToFocus = length(lookfrom .- lookat)
+    aperture = 2.0
+    camera = Camera(lookfrom, lookat, vup, 20.0, aspectRatio, aperture, distToFocus);
 
     pixels = Color[]
     @time begin
