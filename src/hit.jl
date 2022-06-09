@@ -4,6 +4,14 @@ struct HitRecord
     p::Point3
     normal::Vec3
     t::Float64
+    frontFace::Bool
+end
+
+
+function getFaceNormal(ray::Ray, outwardNormal::Vec3)
+    frontFace = dot(ray.direction, outwardNormal) < 0
+    normal = if frontFace outwardNormal else -outwardNormal end
+    (frontFace, normal)
 end
 
 abstract type Hittable end
@@ -36,6 +44,7 @@ function hit(sphere::Sphere, ray::Ray, tMin::Float64, tMax::Float64)
 
     t = root
     p = at(ray, root)
-    normal = (p - sphere.center) / sphere.radius
-    Some(HitRecord(p, normal, t))
+    outwardNormal = (p - sphere.center) / sphere.radius
+    frontFace, normal = getFaceNormal(ray, outwardNormal)
+    Some(HitRecord(p, normal, t, frontFace))
 end
