@@ -25,12 +25,12 @@ function writeColor(file, color::Color)
     @printf file "%d %d %d\n" ir ib ig
 end
 
-function rayColor(ray::Ray)
+function rayColor(ray::Ray, objects::Vector{Hittable})
     sphere = Sphere(Point3(0, 0, -1), 0.5)
 
     # I highly doubt this is how to properly handle Some/None
     # TODO: fixme
-    rec = something(hit(sphere, ray, 0.0, Inf))
+    rec = something(hitList(objects, ray, 0.0, Inf))
     if rec != Nothing
         return 0.5 * (rec.normal + Color(1, 1, 1))
     end
@@ -43,13 +43,17 @@ end
 function main()
     file = open("image.ppm", "w")
 
+    world = Hittable[]
+    push!(world, Sphere(Point3(0, 0, -1), 0.5))
+    push!(world, Sphere(Point3(0, -100.5, -1), 100))
+
     @printf file "P3\n%d %d\n255\n" imageWidth imageHeight
     for j in reverse(0:imageHeight - 1)
         for i in (0:imageWidth - 1)
             u = Float64(i) / (imageWidth - 1)
             v = Float64(j) / (imageHeight - 1)
             r = Ray(origin, lowerLeftCorner + (u * horizontal) + (v * vertical) - origin)
-            pixelColor = rayColor(r)
+            pixelColor = rayColor(r, world)
 
             writeColor(file, pixelColor)
         end

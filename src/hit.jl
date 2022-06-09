@@ -35,7 +35,7 @@ function hit(sphere::Sphere, ray::Ray, tMin::Float64, tMax::Float64)
     sqrtd = sqrt(discriminant)
     root = (-half_b - sqrtd) / a
     if root < tMin || tMax < root
-        root = (-half_b + sqrd) / a
+        root = (-half_b + sqrtd) / a
 
         if root < tMin || tMax < root
             return Nothing
@@ -47,4 +47,19 @@ function hit(sphere::Sphere, ray::Ray, tMin::Float64, tMax::Float64)
     outwardNormal = (p - sphere.center) / sphere.radius
     frontFace, normal = getFaceNormal(ray, outwardNormal)
     Some(HitRecord(p, normal, t, frontFace))
+end
+
+function hitList(objects::Vector{Hittable}, ray::Ray, tMin::Float64, tMax::Float64)
+    closestRec = Nothing
+    closestSoFar = tMax
+
+    for object in objects
+        rec = something(hit(object, ray, tMin, closestSoFar))
+        if rec != Nothing
+            closestRec = Some(rec)
+            closestSoFar = rec.t
+        end
+    end
+
+    closestRec
 end
