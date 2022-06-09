@@ -3,26 +3,20 @@ using Printf
 include("vec3.jl")
 include("ray.jl")
 include("hit.jl")
+include("camera.jl")
 
 const aspectRatio = 16.0 / 9.0
 const imageWidth = 256
 const imageHeight = trunc(Int, imageWidth / aspectRatio)
+const samplesPerPixel = 100
 
-const viewportHeight = 2.0
-const viewportWidth = aspectRatio * viewportHeight
-const focalLength = 1.0
+function writeColor(file, color::Color, samplesPerPixel::Int)
+    scale = 1.0 / samplesPerPixel
+    r = 256 * clamp(scale * color[1], 0.0, 0.999)
+    g = 256 * clamp(scale * color[2], 0.0, 0.999)
+    b = 256 * clamp(scale * color[3], 0.0, 0.999)
 
-const origin = Point3(0, 0, 0)
-const horizontal = Vec3(viewportWidth, 0, 0)
-const vertical = Vec3(0, viewportHeight, 0)
-const lowerLeftCorner = origin - (horizontal / 2) - (vertical / 2) - Vec3(0, 0, focalLength)
-
-function writeColor(file, color::Color)
-    ir = trunc(Int, 255.99 * color[1])
-    ib = trunc(Int, 255.99 * color[2])
-    ig = trunc(Int, 255.99 * color[3])
-
-    @printf file "%d %d %d\n" ir ib ig
+    @printf file "%d %d %d\n" r g b
 end
 
 function rayColor(ray::Ray, objects::Vector{Hittable})
@@ -47,15 +41,22 @@ function main()
     push!(world, Sphere(Point3(0, 0, -1), 0.5))
     push!(world, Sphere(Point3(0, -100.5, -1), 100))
 
+    camera = Camera()
+
     @printf file "P3\n%d %d\n255\n" imageWidth imageHeight
     for j in reverse(0:imageHeight - 1)
         for i in (0:imageWidth - 1)
-            u = Float64(i) / (imageWidth - 1)
-            v = Float64(j) / (imageHeight - 1)
-            r = Ray(origin, lowerLeftCorner + (u * horizontal) + (v * vertical) - origin)
-            pixelColor = rayColor(r, world)
+            pixelColor = Color(0, 0, 0)
 
-            writeColor(file, pixelColor)
+            for s in (0:samplesPerPixel - 2)
+                u = Float64(i + rand(Float64)) / (imageWidth - 1)
+                v = Float64(j + rand(Float64)) / (imageHeight - 1)
+
+                ray = getRay(camera, u, v)
+                pixelColor += rayColor(ray, world)
+            end
+
+            writeColor(file, pixelColor, samplesPerPixel)
         end
     end
 
