@@ -26,8 +26,10 @@ function writeColor(file, color::Color)
 end
 
 function rayColor(ray::Ray)
-    if hitSphere(Point3(0, 0, -1), 0.5, ray)
-        return Color(1, 0, 0)
+    t = hitSphere(Point3(0, 0, -1), 0.5, ray)
+    if t > 0.0
+        normal = unitVector(at(ray, t) - Vec3(0, 0, -1))
+        return 0.5 * Color(normal[1] + 1, normal[2] + 1, normal[3] + 1)
     end
 
     unit_direction = unitVector(ray.direction)

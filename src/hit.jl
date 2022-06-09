@@ -6,5 +6,10 @@ function hitSphere(center::Point3, radius::Float64, ray::Ray)
     b = 2.0 * dot(oc, ray.direction)
     c = dot(oc, oc) - radius * radius
     discriminant = b * b - (4 * a * c)
-    discriminant > 0
+
+    if discriminant < 0
+        -1.0
+    else
+        (-b - sqrt(discriminant)) / (2.0 * a)
+    end
 end
