@@ -71,9 +71,9 @@ end
 function main()
     world = Hittable[]
     material_ground = Lambertian(Color(0.8, 0.8, 0.0))
-    material_center = Lambertian(Color(0.7, 0.3, 0.3))
-    material_left = Metal(Color(0.8, 0.8, 0.8))
-    material_right = Metal(Color(0.8, 0.6, 0.2))
+    material_center = Lambertian(Color(0.1, 0.2, 0.5))
+    material_left = Dialectric(1.5)
+    material_right = Metal(Color(0.8, 0.6, 0.2), 0.0)
 
     push!(world, Sphere(Point3(0, -100.5, -1), 100.0, material_ground))
     push!(world, Sphere(Point3(0, 0, -1), 0.5, material_center))

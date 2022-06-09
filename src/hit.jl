@@ -9,6 +9,11 @@ end
 
 struct Metal <: Material
     albedo::Color
+    fuzz::Float64
+end
+
+struct Dialectric <: Material
+    ir::Float64
 end
 
 struct HitRecord
@@ -79,7 +84,7 @@ end
 
 function scatter(metal::Metal, ray::Ray, rec::HitRecord)
     reflected = reflect(unitVector(ray.direction), rec.normal)
-    scattered = Ray(rec.p, reflected)
+    scattered = Ray(rec.p, reflected + metal.fuzz * randomInUnitSphere())
 
     (metal.albedo, scattered)
 end
@@ -97,6 +102,29 @@ function scatter(lambertian::Lambertian, ray::Ray, rec::HitRecord)
     (lambertian.albedo, scattered)
 end
 
-struct Metal <: Material
-    albedo::Color
+function refract(uv::Vec3, n::Vec3,  etaiOverEtat::Float64)
+    cosTheta = min(dot(-uv, n), 1.0)
+    rOutPerp = etaiOverEtat .* (uv .+ (cosTheta .* n))
+    rOutParallel = -sqrt(abs(1.0 .- lengthSquared(rOutPerp))) .* n
+    rOutPerp + rOutParallel
+end
+
+function scatter(dialectric::Dialectric, ray::Ray, rec::HitRecord)
+    attenuation = Color(1.0, 1.0, 1.0)
+    refractionRatio = if rec.frontFace 1.0 / dialectric.ir else dialectric.ir end
+
+    unitDirection = unitVector(ray.direction)
+    cosTheta = min(dot(-unitDirection, rec.normal), 1.0)
+    sinTheta = sqrt(1.0 - (cosTheta * cosTheta))
+
+    cannotRefract = refractionRatio * sinTheta > 1.0
+
+    direction = if cannotRefract
+        reflect(unitDirection, rec.normal)
+    else
+        refract(unitDirection, rec.normal, refractionRatio)
+    end
+
+    scattered = Ray(rec.p, direction)
+    (attenuation, scattered)
 end
