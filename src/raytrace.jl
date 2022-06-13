@@ -7,7 +7,7 @@ include("hit.jl")
 include("camera.jl")
 
 const aspectRatio = 3.0 / 2.0
-const imageWidth = 1200
+const imageWidth = 256
 const imageHeight = trunc(Int, imageWidth / aspectRatio)
 const samplesPerPixel = 100
 const maxDepth = 50
@@ -31,15 +31,15 @@ function writeFile(filePath, pixels)
     end
 end
 
-function rayColor(ray::Ray, objects::Vector{Hittable}, depth::Int)
+function rayColor(ray::Ray, objects::Vector{Sphere}, depth::Int)::Color
     if depth <= 0
         return Color(0, 0, 0)
     end
 
     # I highly doubt this is how to properly handle Some/None
     # TODO: fixme
-    rec = something(hitList(objects, ray, 0.001, Inf))
-    if rec != Nothing
+    rec = hitList(objects, ray, 0.001, Inf)
+    if rec != nothing
         attenuation, scattered = scatter(rec.material, ray, rec)
         return attenuation .* rayColor(scattered, objects, depth - 1)
     end
@@ -51,7 +51,7 @@ end
 
 function runSamples(
     camera::Camera,
-    world::Vector{Hittable},
+    world::Vector{Sphere},
     i::Int,
     j::Int
 )::Color
@@ -69,7 +69,7 @@ function runSamples(
 end
 
 function randomScene()
-    world = Hittable[]
+    world = Sphere[]
 
     groundMaterial = Lambertian(Color(0.5, 0.5, 0.5))
     push!(world, Sphere(Point3(0, -1000, 0), 1000, groundMaterial))
@@ -111,7 +111,18 @@ function randomScene()
     world
 end
 
-progress = Progress(imageWidth * imageHeight, 1)
+# progress = Progress(imageWidth * imageHeight, 1)
+
+function raytrace(pixels, camera, world)
+    arraySize = imageWidth * imageHeight
+    for j in (0:imageHeight - 1)
+        for i in (0:imageWidth - 1)
+            pixelColor = runSamples(camera, world, i, j)
+            pixels[arraySize + 1 - ((j * imageWidth) + (imageWidth - i - 1) + 1)] = pixelColor
+            # next!(progress)
+        end
+    end
+end
 
 function main()
     @printf "using %d threads\n" Threads.nthreads()
@@ -126,16 +137,7 @@ function main()
 
     arraySize = imageWidth * imageHeight
     pixels = Array{Color}(undef, arraySize)
-    @time begin
-        Threads.@threads for j in (0:imageHeight - 1)
-            for i in (0:imageWidth - 1)
-                pixelColor = runSamples(camera, world, i, j)
-                pixels[arraySize + 1 - ((j * imageWidth) + (imageWidth - i - 1) + 1)] = pixelColor
-                next!(progress)
-            end
-        end
-    end # end timing
-
+    raytrace(pixels, camera, world)
     writeFile("image.ppm", pixels)
 end
 

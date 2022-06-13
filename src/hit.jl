@@ -24,9 +24,7 @@ struct HitRecord
     material::Material
 end
 
-abstract type Hittable end
-
-struct Sphere <: Hittable
+struct Sphere
     center::Point3
     radius::Float64
     material::Material
@@ -38,7 +36,7 @@ function getFaceNormal(ray::Ray, outwardNormal::Vec3)
     (frontFace, normal)
 end
 
-function hit(sphere::Sphere, ray::Ray, tMin::Float64, tMax::Float64)
+@inline function hit(sphere::Sphere, ray::Ray, tMin::Float64, tMax::Float64)::Union{HitRecord,Nothing}
     oc = ray.origin .- sphere.center
     a = lengthSquared(ray.direction)
     half_b = dot(oc, ray.direction)
@@ -46,7 +44,7 @@ function hit(sphere::Sphere, ray::Ray, tMin::Float64, tMax::Float64)
     discriminant = (half_b * half_b) - (a * c)
 
     if discriminant < 0
-        return Nothing
+        return nothing
     end
 
     sqrtd = sqrt(discriminant)
@@ -55,7 +53,7 @@ function hit(sphere::Sphere, ray::Ray, tMin::Float64, tMax::Float64)
         root = (-half_b + sqrtd) / a
 
         if root < tMin || tMax < root
-            return Nothing
+            return nothing
         end
     end
 
@@ -63,17 +61,17 @@ function hit(sphere::Sphere, ray::Ray, tMin::Float64, tMax::Float64)
     p = at(ray, root)
     outwardNormal = (p .- sphere.center) ./ sphere.radius
     frontFace, normal = getFaceNormal(ray, outwardNormal)
-    Some(HitRecord(p, normal, t, frontFace, sphere.material))
+    HitRecord(p, normal, t, frontFace, sphere.material)
 end
 
-function hitList(objects::Vector{Hittable}, ray::Ray, tMin::Float64, tMax::Float64)
-    closestRec = Nothing
+@inline function hitList(objects::Vector{Sphere}, ray::Ray, tMin::Float64, tMax::Float64)::Union{HitRecord,Nothing}
+    closestRec = nothing
     closestSoFar = tMax
 
     for object in objects
-        rec = something(hit(object, ray, tMin, closestSoFar))
-        if rec != Nothing
-            closestRec = Some(rec)
+        rec = hit(object, ray, tMin, closestSoFar)
+        if rec != nothing
+            closestRec = rec
             closestSoFar = rec.t
         end
     end
@@ -82,7 +80,7 @@ function hitList(objects::Vector{Hittable}, ray::Ray, tMin::Float64, tMax::Float
 end
 
 
-function scatter(metal::Metal, ray::Ray, rec::HitRecord)
+@inline function scatter(metal::Metal, ray::Ray, rec::HitRecord)
     reflected = reflect(unitVector(ray.direction), rec.normal)
     scattered = Ray(rec.p, reflected + metal.fuzz * randomInUnitSphere())
 
@@ -90,7 +88,7 @@ function scatter(metal::Metal, ray::Ray, rec::HitRecord)
 end
 
 
-function scatter(lambertian::Lambertian, ray::Ray, rec::HitRecord)
+@inline function scatter(lambertian::Lambertian, ray::Ray, rec::HitRecord)
     scatterDirection = rec.normal + randomUnitVector()
 
     # Catch degenerate scatter direction
@@ -102,21 +100,21 @@ function scatter(lambertian::Lambertian, ray::Ray, rec::HitRecord)
     (lambertian.albedo, scattered)
 end
 
-function refract(uv::Vec3, n::Vec3,  etaiOverEtat::Float64)
+@inline function refract(uv::Vec3, n::Vec3,  etaiOverEtat::Float64)
     cosTheta = min(dot(-uv, n), 1.0)
     rOutPerp = etaiOverEtat .* (uv .+ (cosTheta .* n))
     rOutParallel = -sqrt(abs(1.0 .- lengthSquared(rOutPerp))) .* n
     rOutPerp + rOutParallel
 end
 
-function reflectance(cosine::Float64, refIdx::Float64)
+@inline function reflectance(cosine::Float64, refIdx::Float64)
     # Use Schlick's approximation for reflectance
     r0 = (1 - refIdx) / (1 + refIdx)
     r0 = r0 * r0
     r0 + ((1 - r0) * ((1 - cosine) ^ 5))
 end
 
-function scatter(dialectric::Dialectric, ray::Ray, rec::HitRecord)
+@inline function scatter(dialectric::Dialectric, ray::Ray, rec::HitRecord)
     attenuation = Color(1.0, 1.0, 1.0)
     refractionRatio = if rec.frontFace 1.0 / dialectric.ir else dialectric.ir end
 
